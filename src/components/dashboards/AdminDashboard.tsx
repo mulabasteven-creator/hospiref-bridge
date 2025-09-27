@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import HospitalManagement from '@/components/admin/HospitalManagement';
+import ReferralManagement from '@/components/admin/ReferralManagement';
 import { 
   Building, 
   Users, 
@@ -155,10 +157,14 @@ const AdminDashboard = () => {
 
         {/* Management Tabs */}
         <Tabs defaultValue="hospitals" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="hospitals">
               <Building className="w-4 h-4 mr-2" />
               Hospitals
+            </TabsTrigger>
+            <TabsTrigger value="referrals">
+              <FileText className="w-4 h-4 mr-2" />
+              Referrals
             </TabsTrigger>
             <TabsTrigger value="departments">
               <Hospital className="w-4 h-4 mr-2" />
@@ -175,28 +181,11 @@ const AdminDashboard = () => {
           </TabsList>
 
           <TabsContent value="hospitals" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Hospital Management</CardTitle>
-                    <CardDescription>
-                      Manage hospital facilities and their information
-                    </CardDescription>
-                  </div>
-                  <Button>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Hospital
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-muted-foreground">
-                  Hospital management interface will be implemented here.
-                  Features include adding, editing, and managing hospital details.
-                </div>
-              </CardContent>
-            </Card>
+            <HospitalManagement />
+          </TabsContent>
+
+          <TabsContent value="referrals" className="space-y-4">
+            <ReferralManagement />
           </TabsContent>
 
           <TabsContent value="departments" className="space-y-4">
