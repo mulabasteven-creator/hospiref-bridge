@@ -36,7 +36,7 @@ export const useAuth = () => {
                 .from('profiles')
                 .select('*')
                 .eq('id', session.user.id)
-                .single();
+                .maybeSingle();
               
               if (error) {
                 console.error('Error fetching profile:', error);
@@ -45,7 +45,7 @@ export const useAuth = () => {
                   description: "Failed to load user profile",
                   variant: "destructive"
                 });
-              } else {
+              } else if (profileData) {
                 setProfile(profileData);
               }
             } catch (error) {
@@ -71,7 +71,7 @@ export const useAuth = () => {
           .from('profiles')
           .select('*')
           .eq('id', session.user.id)
-          .single()
+          .maybeSingle()
           .then(({ data: profileData, error }) => {
             if (!error && profileData) {
               setProfile(profileData);
