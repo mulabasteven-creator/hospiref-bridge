@@ -324,6 +324,13 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      has_profile_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["user_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       gender: "male" | "female" | "other"
