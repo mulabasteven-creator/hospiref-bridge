@@ -454,7 +454,7 @@ const SpecialistDashboard = () => {
               <CardContent className="space-y-4">
                 <div>
                   <label className="text-sm font-medium">Status</label>
-                  <Select value={updateData.status} onValueChange={(value) => setUpdateData({...updateData, status: value})}>
+                  <Select value={updateData.status} onValueChange={(value) => setUpdateData({...updateData, status: value as 'pending' | 'in_progress' | 'completed' | 'cancelled' | ''})}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
