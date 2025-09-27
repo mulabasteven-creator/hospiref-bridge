@@ -470,7 +470,11 @@ const [formData, setFormData] = useState({
                       </div>
                     </div>
                   </div>
+                  
                   <DialogFooter>
+                    <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                      Cancel
+                    </Button>
                     <Button type="submit">Create Referral</Button>
                   </DialogFooter>
                 </form>
