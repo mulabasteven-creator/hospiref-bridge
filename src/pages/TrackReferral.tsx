@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -52,9 +52,22 @@ const TrackReferral = () => {
   const [referralDetails, setReferralDetails] = useState<ReferralDetails | null>(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
-  const searchReferral = async () => {
-    if (!referralId.trim()) {
+  useEffect(() => {
+    const idFromUrl = searchParams.get('id');
+    if (idFromUrl) {
+      setReferralId(idFromUrl);
+      // Auto-search if ID is provided in URL
+      setTimeout(() => {
+        searchReferral(idFromUrl);
+      }, 100);
+    }
+  }, [searchParams]);
+
+  const searchReferral = async (idToSearch?: string) => {
+    const searchId = idToSearch || referralId;
+    if (!searchId.trim()) {
       toast({
         title: "Invalid Input",
         description: "Please enter a referral ID",
@@ -83,7 +96,7 @@ const TrackReferral = () => {
           target_hospital:hospitals!referrals_target_hospital_id_fkey(name, city, state),
           target_department:departments(name, description)
         `)
-        .eq('referral_id', referralId.toUpperCase())
+        .eq('referral_id', searchId.toUpperCase())
         .single();
 
       if (error) {
@@ -182,7 +195,7 @@ const TrackReferral = () => {
                 />
               </div>
               <div className="flex items-end">
-                <Button onClick={searchReferral} disabled={loading}>
+                <Button onClick={() => searchReferral()} disabled={loading}>
                   <Search className="w-4 h-4 mr-2" />
                   {loading ? 'Searching...' : 'Search'}
                 </Button>

@@ -496,6 +496,15 @@ const [formData, setFormData] = useState({
               <p className="text-sm text-green-600 mt-1">
                 Share this ID with the patient for tracking purposes.
               </p>
+              <div className="mt-3">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => window.open(`/track-referral?id=${createdReferralId}`, '_blank')}
+                >
+                  Track This Referral
+                </Button>
+              </div>
             </div>
           )}
           
@@ -531,7 +540,11 @@ const [formData, setFormData] = useState({
                     </TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                        onClick={() => window.open(`/track-referral?id=${referral.referral_id}`, '_blank')}
+                        >
                           <Eye className="w-4 h-4" />
                         </Button>
                         <Button variant="outline" size="sm">

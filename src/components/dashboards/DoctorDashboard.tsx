@@ -7,6 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
+import ReferralManagement from "@/components/admin/ReferralManagement";
+import DepartmentManagement from "@/components/admin/DepartmentManagement";
 import { 
   FileText, 
   Users, 
@@ -14,7 +16,8 @@ import {
   Clock,
   CheckCircle,
   AlertCircle,
-  TrendingUp
+  TrendingUp,
+  Hospital
 } from 'lucide-react';
 
 interface DoctorStats {
@@ -217,7 +220,7 @@ const DoctorDashboard = () => {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="referrals" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="referrals">
               <FileText className="w-4 h-4 mr-2" />
               My Referrals
@@ -225,6 +228,10 @@ const DoctorDashboard = () => {
             <TabsTrigger value="create">
               <Plus className="w-4 h-4 mr-2" />
               Create Referral
+            </TabsTrigger>
+            <TabsTrigger value="departments">
+              <Hospital className="w-4 h-4 mr-2" />
+              Departments
             </TabsTrigger>
             <TabsTrigger value="patients">
               <Users className="w-4 h-4 mr-2" />
@@ -289,28 +296,11 @@ const DoctorDashboard = () => {
           </TabsContent>
 
           <TabsContent value="create" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Create New Referral</CardTitle>
-                    <CardDescription>
-                      Refer a patient to a specialist or another hospital
-                    </CardDescription>
-                  </div>
-                  <Button>
-                    <Plus className="w-4 h-4 mr-2" />
-                    New Referral
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-muted-foreground">
-                  Referral creation form will be implemented here.
-                  Features include patient selection, hospital/department selection, and referral details.
-                </div>
-              </CardContent>
-            </Card>
+            <ReferralManagement />
+          </TabsContent>
+          
+          <TabsContent value="departments" className="space-y-4">
+            <DepartmentManagement />
           </TabsContent>
 
           <TabsContent value="patients" className="space-y-4">
