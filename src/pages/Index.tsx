@@ -30,7 +30,7 @@ const Index = () => {
               <Button 
                 size="lg" 
                 variant="outline" 
-                onClick={() => navigate('/track')}
+                onClick={() => navigate('/track-referral')}
                 className="min-w-[200px]"
               >
                 <Search className="w-5 h-5 mr-2" />
@@ -176,7 +176,7 @@ const Index = () => {
               <Button 
                 size="lg" 
                 variant="outline"
-                onClick={() => navigate('/track')}
+                onClick={() => navigate('/track-referral')}
                 className="min-w-[200px] bg-transparent border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary"
               >
                 Track a Referral
