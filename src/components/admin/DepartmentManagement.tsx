@@ -16,6 +16,7 @@ interface Department {
   name: string;
   description?: string;
   hospital_id: string;
+  created_at: string;
   hospitals?: {
     name: string;
   };

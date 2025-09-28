@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import HospitalManagement from '@/components/admin/HospitalManagement';
 import ReferralManagement from '@/components/admin/ReferralManagement';
+import DepartmentManagement from '@/components/admin/DepartmentManagement';
 import { 
   Building, 
   Users, 
@@ -189,28 +190,7 @@ const AdminDashboard = () => {
           </TabsContent>
 
           <TabsContent value="departments" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Department Management</CardTitle>
-                    <CardDescription>
-                      Manage departments within hospitals
-                    </CardDescription>
-                  </div>
-                  <Button>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Department
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-muted-foreground">
-                  Department management interface will be implemented here.
-                  Features include creating departments, assigning specialists, and managing department details.
-                </div>
-              </CardContent>
-            </Card>
+            <DepartmentManagement />
           </TabsContent>
 
           <TabsContent value="users" className="space-y-4">
