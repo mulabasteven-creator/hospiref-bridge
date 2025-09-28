@@ -254,14 +254,14 @@ const [formData, setFormData] = useState({
                   Create Referral
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[500px]">
+              <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Create New Referral</DialogTitle>
                   <DialogDescription>
                     Create a new patient referral to a specialist or another hospital.
                   </DialogDescription>
                 </DialogHeader>
-                <form onSubmit={handleCreateReferral} className="space-y-4">
+                <form onSubmit={handleCreateReferral} className="space-y-4 pb-24">
                   <div className="grid gap-4 py-4">
                     {/* Patient Information */}
                     <div className="space-y-4 border-b pb-4">
@@ -471,7 +471,8 @@ const [formData, setFormData] = useState({
                     </div>
                   </div>
                   
-                  <DialogFooter>
+                  
+                  <DialogFooter className="sticky bottom-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t p-4 flex gap-2 justify-end">
                     <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
                       Cancel
                     </Button>
