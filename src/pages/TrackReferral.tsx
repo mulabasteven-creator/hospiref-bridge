@@ -97,9 +97,17 @@ const TrackReferral = () => {
           target_department:departments(name, description)
         `)
         .eq('referral_id', searchId.toUpperCase())
-        .single();
+        .maybeSingle();
 
       if (error) {
+        console.error('Database error:', error);
+        toast({
+          title: "Search Error",
+          description: "An error occurred while searching for the referral",
+          variant: "destructive"
+        });
+        setReferralDetails(null);
+      } else if (!data) {
         toast({
           title: "Referral Not Found",
           description: "Please check the referral ID and try again",

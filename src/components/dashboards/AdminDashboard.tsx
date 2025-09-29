@@ -9,6 +9,7 @@ import { toast } from '@/hooks/use-toast';
 import HospitalManagement from '@/components/admin/HospitalManagement';
 import ReferralManagement from '@/components/admin/ReferralManagement';
 import DepartmentManagement from '@/components/admin/DepartmentManagement';
+import DoctorAllocation from '@/components/admin/DoctorAllocation';
 import { 
   Building, 
   Users, 
@@ -191,6 +192,10 @@ const AdminDashboard = () => {
 
           <TabsContent value="departments" className="space-y-4">
             <DepartmentManagement />
+          </TabsContent>
+
+          <TabsContent value="doctors" className="space-y-4">
+            <DoctorAllocation />
           </TabsContent>
 
           <TabsContent value="users" className="space-y-4">
