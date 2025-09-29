@@ -78,26 +78,9 @@ const TrackReferral = () => {
 
     setLoading(true);
     try {
+      // Use the database function for public tracking
       const { data, error } = await supabase
-        .from('referrals')
-        .select(`
-          referral_id,
-          status,
-          urgency,
-          reason,
-          notes,
-          specialist_notes,
-          appointment_date,
-          created_at,
-          patient:patients(full_name, patient_id),
-          referring_doctor:profiles!referrals_referring_doctor_id_fkey(full_name, specialization),
-          target_specialist:profiles!referrals_target_specialist_id_fkey(full_name, specialization),
-          origin_hospital:hospitals!referrals_origin_hospital_id_fkey(name, city, state),
-          target_hospital:hospitals!referrals_target_hospital_id_fkey(name, city, state),
-          target_department:departments(name, description)
-        `)
-        .eq('referral_id', searchId.toUpperCase())
-        .maybeSingle();
+        .rpc('get_referral_public', { _referral_id: searchId });
 
       if (error) {
         console.error('Database error:', error);
@@ -107,7 +90,7 @@ const TrackReferral = () => {
           variant: "destructive"
         });
         setReferralDetails(null);
-      } else if (!data) {
+      } else if (!data || data.length === 0) {
         toast({
           title: "Referral Not Found",
           description: "Please check the referral ID and try again",
@@ -115,7 +98,45 @@ const TrackReferral = () => {
         });
         setReferralDetails(null);
       } else {
-        setReferralDetails(data as ReferralDetails);
+        // Map the database response to our interface
+        const referralData = data[0];
+        const mappedData: ReferralDetails = {
+          referral_id: referralData.referral_id,
+          status: referralData.status,
+          urgency: referralData.urgency,
+          reason: referralData.reason,
+          notes: referralData.notes,
+          specialist_notes: null,
+          appointment_date: referralData.appointment_date,
+          created_at: referralData.created_at,
+          patient: {
+            full_name: referralData.patient_full_name,
+            patient_id: referralData.patient_id
+          },
+          referring_doctor: {
+            full_name: referralData.referring_doctor_name,
+            specialization: null
+          },
+          target_specialist: referralData.target_specialist_name ? {
+            full_name: referralData.target_specialist_name,
+            specialization: null
+          } : null,
+          origin_hospital: {
+            name: referralData.origin_hospital_name,
+            city: referralData.origin_hospital_city,
+            state: referralData.origin_hospital_state
+          },
+          target_hospital: {
+            name: referralData.target_hospital_name,
+            city: referralData.target_hospital_city,
+            state: referralData.target_hospital_state
+          },
+          target_department: {
+            name: referralData.target_department_name,
+            description: referralData.target_department_description
+          }
+        };
+        setReferralDetails(mappedData);
       }
     } catch (error) {
       console.error('Search error:', error);

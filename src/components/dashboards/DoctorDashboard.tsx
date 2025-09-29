@@ -9,6 +9,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
 import ReferralManagement from "@/components/admin/ReferralManagement";
 import DepartmentManagement from "@/components/admin/DepartmentManagement";
+import PatientManagement from "@/components/admin/PatientManagement";
+import IncomingReferrals from "@/components/admin/IncomingReferrals";
 import { 
   FileText, 
   Users, 
@@ -219,8 +221,12 @@ const DoctorDashboard = () => {
         </div>
 
         {/* Main Content Tabs */}
-        <Tabs defaultValue="referrals" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+        <Tabs defaultValue="incoming" className="w-full">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="incoming">
+              <Clock className="w-4 h-4 mr-2" />
+              Incoming
+            </TabsTrigger>
             <TabsTrigger value="referrals">
               <FileText className="w-4 h-4 mr-2" />
               My Referrals
@@ -238,6 +244,10 @@ const DoctorDashboard = () => {
               Patients
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="incoming" className="space-y-4">
+            <IncomingReferrals />
+          </TabsContent>
 
           <TabsContent value="referrals" className="space-y-4">
             <Card>
@@ -304,28 +314,7 @@ const DoctorDashboard = () => {
           </TabsContent>
 
           <TabsContent value="patients" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Patient Management</CardTitle>
-                    <CardDescription>
-                      Manage patients at your hospital
-                    </CardDescription>
-                  </div>
-                  <Button>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Patient
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-muted-foreground">
-                  Patient management interface will be implemented here.
-                  Features include patient registration, medical history, and referral history.
-                </div>
-              </CardContent>
-            </Card>
+            <PatientManagement />
           </TabsContent>
         </Tabs>
       </div>
