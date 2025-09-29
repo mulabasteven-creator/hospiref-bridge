@@ -324,6 +324,30 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_referral_public: {
+        Args: { _referral_id: string }
+        Returns: {
+          appointment_date: string
+          created_at: string
+          notes: string
+          origin_hospital_city: string
+          origin_hospital_name: string
+          origin_hospital_state: string
+          patient_full_name: string
+          patient_id: string
+          reason: string
+          referral_id: string
+          referring_doctor_name: string
+          status: Database["public"]["Enums"]["referral_status"]
+          target_department_description: string
+          target_department_name: string
+          target_hospital_city: string
+          target_hospital_name: string
+          target_hospital_state: string
+          target_specialist_name: string
+          urgency: Database["public"]["Enums"]["urgency_level"]
+        }[]
+      }
       has_profile_role: {
         Args: {
           _role: Database["public"]["Enums"]["user_role"]
