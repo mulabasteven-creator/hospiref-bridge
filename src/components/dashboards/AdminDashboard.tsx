@@ -10,6 +10,7 @@ import HospitalManagement from '@/components/admin/HospitalManagement';
 import ReferralManagement from '@/components/admin/ReferralManagement';
 import DepartmentManagement from '@/components/admin/DepartmentManagement';
 import DoctorAllocation from '@/components/admin/DoctorAllocation';
+import DoctorManagement from '@/components/admin/DoctorManagement';
 import { 
   Building, 
   Users, 
@@ -159,7 +160,7 @@ const AdminDashboard = () => {
 
         {/* Management Tabs */}
         <Tabs defaultValue="hospitals" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="hospitals">
               <Building className="w-4 h-4 mr-2" />
               Hospitals
@@ -171,6 +172,10 @@ const AdminDashboard = () => {
             <TabsTrigger value="departments">
               <Hospital className="w-4 h-4 mr-2" />
               Departments
+            </TabsTrigger>
+            <TabsTrigger value="doctors">
+              <UserCheck className="w-4 h-4 mr-2" />
+              Doctors
             </TabsTrigger>
             <TabsTrigger value="users">
               <Users className="w-4 h-4 mr-2" />
@@ -195,7 +200,7 @@ const AdminDashboard = () => {
           </TabsContent>
 
           <TabsContent value="doctors" className="space-y-4">
-            <DoctorAllocation />
+            <DoctorManagement />
           </TabsContent>
 
           <TabsContent value="users" className="space-y-4">

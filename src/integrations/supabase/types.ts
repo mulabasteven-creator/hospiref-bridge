@@ -59,6 +59,88 @@ export type Database = {
           },
         ]
       }
+      doctor_departments: {
+        Row: {
+          created_at: string
+          department_id: string
+          doctor_id: string
+          hospital_id: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          department_id: string
+          doctor_id: string
+          hospital_id: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          department_id?: string
+          doctor_id?: string
+          hospital_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "doctor_departments_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "doctor_departments_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "doctor_departments_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      doctor_hospitals: {
+        Row: {
+          created_at: string
+          doctor_id: string
+          hospital_id: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          doctor_id: string
+          hospital_id: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          doctor_id?: string
+          hospital_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "doctor_hospitals_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "doctor_hospitals_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hospitals: {
         Row: {
           address: string

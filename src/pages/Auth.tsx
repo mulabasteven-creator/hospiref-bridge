@@ -6,8 +6,22 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/hooks/useAuth';
-import { Heart, Shield, UserCheck, User } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { Heart, Shield, UserCheck, User, Hospital, Building2 } from 'lucide-react';
+
+interface Hospital {
+  id: string;
+  name: string;
+  city: string;
+}
+
+interface Department {
+  id: string;
+  name: string;
+  hospital_id: string;
+}
 
 const Auth = () => {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -16,9 +30,16 @@ const Auth = () => {
     password: '',
     fullName: '',
     phone: '',
-    role: 'patient'
+    role: 'patient',
+    specialization: '',
+    licenseNumber: ''
   });
+  const [selectedHospitals, setSelectedHospitals] = useState<string[]>([]);
+  const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
+  const [hospitals, setHospitals] = useState<Hospital[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingData, setLoadingData] = useState(false);
   
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
@@ -29,23 +50,86 @@ const Auth = () => {
     }
   }, [user, navigate]);
 
+  useEffect(() => {
+    if (isSignUp && (formData.role === 'doctor' || formData.role === 'specialist')) {
+      fetchHospitalsAndDepartments();
+    }
+  }, [isSignUp, formData.role]);
+
+  const fetchHospitalsAndDepartments = async () => {
+    setLoadingData(true);
+    try {
+      const [hospitalsResponse, departmentsResponse] = await Promise.all([
+        supabase.from('hospitals').select('id, name, city').order('name'),
+        supabase.from('departments').select('id, name, hospital_id').order('name')
+      ]);
+
+      if (hospitalsResponse.error) throw hospitalsResponse.error;
+      if (departmentsResponse.error) throw departmentsResponse.error;
+
+      setHospitals(hospitalsResponse.data || []);
+      setDepartments(departmentsResponse.data || []);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoadingData(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
       if (isSignUp) {
-        await signUp(formData.email, formData.password, {
+        const userData: any = {
           full_name: formData.fullName,
           role: formData.role,
           phone: formData.phone || undefined
-        });
+        };
+
+        if (formData.role === 'doctor' || formData.role === 'specialist') {
+          userData.specialization = formData.specialization || undefined;
+          userData.license_number = formData.licenseNumber || undefined;
+          userData.selected_hospitals = selectedHospitals;
+          userData.selected_departments = selectedDepartments;
+        }
+
+        await signUp(formData.email, formData.password, userData);
       } else {
         await signIn(formData.email, formData.password);
       }
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleHospitalToggle = (hospitalId: string) => {
+    setSelectedHospitals(prev => 
+      prev.includes(hospitalId) 
+        ? prev.filter(id => id !== hospitalId)
+        : [...prev, hospitalId]
+    );
+    
+    // Remove departments from unselected hospitals
+    setSelectedDepartments(prev => 
+      prev.filter(deptId => {
+        const dept = departments.find(d => d.id === deptId);
+        return dept && (selectedHospitals.includes(dept.hospital_id) || hospitalId === dept.hospital_id);
+      })
+    );
+  };
+
+  const handleDepartmentToggle = (departmentId: string) => {
+    setSelectedDepartments(prev =>
+      prev.includes(departmentId)
+        ? prev.filter(id => id !== departmentId)
+        : [...prev, departmentId]
+    );
+  };
+
+  const getAvailableDepartments = () => {
+    return departments.filter(dept => selectedHospitals.includes(dept.hospital_id));
   };
 
   const getRoleIcon = (role: string) => {
@@ -163,7 +247,11 @@ const Auth = () => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="role">Role</Label>
-                  <Select value={formData.role} onValueChange={(value) => setFormData({...formData, role: value})}>
+                  <Select value={formData.role} onValueChange={(value) => {
+                    setFormData({...formData, role: value});
+                    setSelectedHospitals([]);
+                    setSelectedDepartments([]);
+                  }}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -198,7 +286,95 @@ const Auth = () => {
                     {getRoleDescription(formData.role)}
                   </p>
                 </div>
-                <Button type="submit" className="w-full" disabled={loading}>
+
+                {(formData.role === 'doctor' || formData.role === 'specialist') && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="specialization">Specialization</Label>
+                      <Input
+                        id="specialization"
+                        type="text"
+                        placeholder="e.g., Cardiology, Neurology"
+                        value={formData.specialization}
+                        onChange={(e) => setFormData({...formData, specialization: e.target.value})}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="licenseNumber">License Number</Label>
+                      <Input
+                        id="licenseNumber"
+                        type="text"
+                        placeholder="Medical license number"
+                        value={formData.licenseNumber}
+                        onChange={(e) => setFormData({...formData, licenseNumber: e.target.value})}
+                        required
+                      />
+                    </div>
+                    
+                    {loadingData ? (
+                      <div className="text-center py-4 text-muted-foreground">
+                        Loading hospitals and departments...
+                      </div>
+                    ) : (
+                      <>
+                        <div className="space-y-2">
+                          <Label>Select Hospital(s)</Label>
+                          <div className="max-h-32 overflow-y-auto border rounded-md p-2 space-y-2">
+                            {hospitals.map((hospital) => (
+                              <div key={hospital.id} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={`hospital-${hospital.id}`}
+                                  checked={selectedHospitals.includes(hospital.id)}
+                                  onCheckedChange={() => handleHospitalToggle(hospital.id)}
+                                />
+                                <Label htmlFor={`hospital-${hospital.id}`} className="text-sm flex items-center space-x-1">
+                                  <Building2 className="w-3 h-3" />
+                                  <span>{hospital.name} - {hospital.city}</span>
+                                </Label>
+                              </div>
+                            ))}
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Select one or more hospitals where you work
+                          </p>
+                        </div>
+
+                        {selectedHospitals.length > 0 && (
+                          <div className="space-y-2">
+                            <Label>Select Department(s)</Label>
+                            <div className="max-h-32 overflow-y-auto border rounded-md p-2 space-y-2">
+                              {getAvailableDepartments().map((department) => (
+                                <div key={department.id} className="flex items-center space-x-2">
+                                  <Checkbox
+                                    id={`dept-${department.id}`}
+                                    checked={selectedDepartments.includes(department.id)}
+                                    onCheckedChange={() => handleDepartmentToggle(department.id)}
+                                  />
+                                  <Label htmlFor={`dept-${department.id}`} className="text-sm flex items-center space-x-1">
+                                    <Hospital className="w-3 h-3" />
+                                    <span>{department.name}</span>
+                                    <span className="text-muted-foreground">
+                                      ({hospitals.find(h => h.id === department.hospital_id)?.name})
+                                    </span>
+                                  </Label>
+                                </div>
+                              ))}
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              Select your department(s) in the selected hospitals
+                            </p>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </>
+                )}
+                <Button 
+                  type="submit" 
+                  className="w-full" 
+                  disabled={loading || (formData.role === 'doctor' && selectedHospitals.length === 0)}
+                >
                   {loading ? 'Creating Account...' : 'Create Account'}
                 </Button>
               </form>

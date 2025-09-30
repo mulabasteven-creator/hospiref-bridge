@@ -90,11 +90,15 @@ export const useAuth = () => {
     full_name: string; 
     role: string; 
     phone?: string;
+    specialization?: string;
+    license_number?: string;
+    selected_hospitals?: string[];
+    selected_departments?: string[];
   }) => {
     try {
       const redirectUrl = `${window.location.origin}/`;
       
-      const { error } = await supabase.auth.signUp({
+      const { data: authData, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -102,7 +106,9 @@ export const useAuth = () => {
           data: {
             full_name: userData.full_name,
             role: userData.role,
-            phone: userData.phone
+            phone: userData.phone,
+            specialization: userData.specialization,
+            license_number: userData.license_number
           }
         }
       });
@@ -114,6 +120,18 @@ export const useAuth = () => {
           variant: "destructive"
         });
         return { error };
+      }
+
+      // If doctor/specialist with hospital assignments, we'll handle those after profile creation
+      if (authData.user && (userData.role === 'doctor' || userData.role === 'specialist') && 
+          (userData.selected_hospitals?.length || userData.selected_departments?.length)) {
+        
+        // Store assignments temporarily in localStorage for processing after email confirmation
+        localStorage.setItem('pending_assignments', JSON.stringify({
+          user_id: authData.user.id,
+          hospitals: userData.selected_hospitals || [],
+          departments: userData.selected_departments || []
+        }));
       }
 
       toast({
