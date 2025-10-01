@@ -45,15 +45,32 @@ const IncomingReferrals = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (profile?.hospital_id) {
+    if (profile?.id) {
       fetchIncomingReferrals();
     }
-  }, [profile?.hospital_id]);
+  }, [profile?.id]);
 
   const fetchIncomingReferrals = async () => {
-    if (!profile?.hospital_id) return;
+    if (!profile?.id) return;
 
     try {
+      // First, get the hospitals this doctor is assigned to
+      const { data: assignedHospitals, error: hospitalsError } = await supabase
+        .from('doctor_hospitals')
+        .select('hospital_id')
+        .eq('doctor_id', profile.id);
+
+      if (hospitalsError) throw hospitalsError;
+
+      if (!assignedHospitals || assignedHospitals.length === 0) {
+        setReferrals([]);
+        setLoading(false);
+        return;
+      }
+
+      const hospitalIds = assignedHospitals.map(h => h.hospital_id);
+
+      // Fetch referrals for all assigned hospitals
       const { data, error } = await supabase
         .from('referrals')
         .select(`
@@ -70,7 +87,7 @@ const IncomingReferrals = () => {
           origin_hospital:hospitals!referrals_origin_hospital_id_fkey(name, city, state),
           target_department:departments(name)
         `)
-        .eq('target_hospital_id', profile.hospital_id)
+        .in('target_hospital_id', hospitalIds)
         .order('created_at', { ascending: false });
 
       if (error) throw error;

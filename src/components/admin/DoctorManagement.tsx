@@ -86,10 +86,13 @@ const DoctorManagement = () => {
         .select(`
           doctor_id,
           hospital_id,
-          hospitals!inner(name, city)
+          hospitals(name, city)
         `);
 
-      if (hospitalError) throw hospitalError;
+      if (hospitalError) {
+        console.error('Hospital assignments error:', hospitalError);
+        throw hospitalError;
+      }
 
       // Fetch department assignments
       const { data: departmentAssignments, error: departmentError } = await supabase
@@ -97,45 +100,54 @@ const DoctorManagement = () => {
         .select(`
           doctor_id,
           department_id,
-          departments!inner(name),
-          hospitals!inner(name)
+          departments(name, hospital_id),
+          hospitals(name)
         `);
 
-      if (departmentError) throw departmentError;
+      if (departmentError) {
+        console.error('Department assignments error:', departmentError);
+        throw departmentError;
+      }
 
       // Fetch all hospitals and departments for the assignment interface
       const [hospitalsResponse, departmentsResponse] = await Promise.all([
         supabase.from('hospitals').select('id, name, city').order('name'),
-        supabase.from('departments').select('id, name, hospital_id, hospitals!inner(name)').order('name')
+        supabase.from('departments').select('id, name, hospital_id, hospitals(name)').order('name')
       ]);
 
-      if (hospitalsResponse.error) throw hospitalsResponse.error;
-      if (departmentsResponse.error) throw departmentsResponse.error;
+      if (hospitalsResponse.error) {
+        console.error('Hospitals fetch error:', hospitalsResponse.error);
+        throw hospitalsResponse.error;
+      }
+      if (departmentsResponse.error) {
+        console.error('Departments fetch error:', departmentsResponse.error);
+        throw departmentsResponse.error;
+      }
 
       setHospitals(hospitalsResponse.data || []);
       setDepartments((departmentsResponse.data || []).map(dept => ({
         id: dept.id,
         name: dept.name,
         hospital_id: dept.hospital_id,
-        hospital_name: dept.hospitals.name
+        hospital_name: dept.hospitals?.name || 'Unknown Hospital'
       })));
 
       // Combine doctor data with assignments
       const enrichedDoctors = (doctorsData || []).map(doctor => ({
         ...doctor,
         hospital_assignments: (hospitalAssignments || [])
-          .filter(ha => ha.doctor_id === doctor.id)
+          .filter(ha => ha.doctor_id === doctor.id && ha.hospitals)
           .map(ha => ({
             hospital_id: ha.hospital_id,
-            hospital_name: ha.hospitals.name,
-            hospital_city: ha.hospitals.city
+            hospital_name: ha.hospitals?.name || 'Unknown',
+            hospital_city: ha.hospitals?.city || 'Unknown'
           })),
         department_assignments: (departmentAssignments || [])
-          .filter(da => da.doctor_id === doctor.id)
+          .filter(da => da.doctor_id === doctor.id && da.departments && da.hospitals)
           .map(da => ({
             department_id: da.department_id,
-            department_name: da.departments.name,
-            hospital_name: da.hospitals.name
+            department_name: da.departments?.name || 'Unknown',
+            hospital_name: da.hospitals?.name || 'Unknown'
           }))
       }));
 

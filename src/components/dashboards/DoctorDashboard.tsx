@@ -58,6 +58,7 @@ const DoctorDashboard = () => {
   });
   const [recentReferrals, setRecentReferrals] = useState<Referral[]>([]);
   const [loading, setLoading] = useState(true);
+  const [assignedHospitals, setAssignedHospitals] = useState<Array<{ name: string; city: string }>>([]);
 
   useEffect(() => {
     if (profile?.id) {
@@ -69,6 +70,20 @@ const DoctorDashboard = () => {
     if (!profile?.id) return;
 
     try {
+      // Fetch assigned hospitals
+      const { data: hospitalsData } = await supabase
+        .from('doctor_hospitals')
+        .select('hospital_id, hospitals!inner(name, city)')
+        .eq('doctor_id', profile.id);
+
+      const hospitals = (hospitalsData || []).map(h => ({
+        name: h.hospitals.name,
+        city: h.hospitals.city
+      }));
+      setAssignedHospitals(hospitals);
+
+      const hospitalIds = (hospitalsData || []).map(h => h.hospital_id);
+
       // Fetch stats
       const [
         totalReferralsResult,
@@ -79,7 +94,9 @@ const DoctorDashboard = () => {
         supabase.from('referrals').select('id', { count: 'exact', head: true }).eq('referring_doctor_id', profile.id),
         supabase.from('referrals').select('id', { count: 'exact', head: true }).eq('referring_doctor_id', profile.id).eq('status', 'pending'),
         supabase.from('referrals').select('id', { count: 'exact', head: true }).eq('referring_doctor_id', profile.id).eq('status', 'completed'),
-        supabase.from('patients').select('id', { count: 'exact', head: true }).eq('current_hospital_id', profile.hospital_id)
+        hospitalIds.length > 0 
+          ? supabase.from('patients').select('id', { count: 'exact', head: true }).in('current_hospital_id', hospitalIds)
+          : { count: 0 }
       ]);
 
       setStats({
@@ -191,6 +208,23 @@ const DoctorDashboard = () => {
       description="Manage your referrals and patient care coordination"
     >
       <div className="space-y-6">
+        {/* Profile Badge with Assigned Hospitals */}
+        {assignedHospitals.length > 0 && (
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-medium">Assigned to:</span>
+                {assignedHospitals.map((hospital, index) => (
+                  <Badge key={index} variant="outline" className="flex items-center gap-1">
+                    <Hospital className="w-3 h-3" />
+                    {hospital.name} - {hospital.city}
+                  </Badge>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
