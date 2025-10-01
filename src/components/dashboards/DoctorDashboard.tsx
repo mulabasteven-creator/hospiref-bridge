@@ -115,28 +115,57 @@ const DoctorDashboard = () => {
         totalPatients: patientsResult.count || 0
       });
 
-      // Fetch recent referrals
-      const { data: referralsData, error: referralsError } = await supabase
+      // Fetch recent referrals (base fields only)
+      const { data: baseRefs, error: refsErr } = await supabase
         .from('referrals')
-        .select(`
-          id,
-          referral_id,
-          status,
-          urgency,
-          reason,
-          created_at,
-          patient:patients(full_name, patient_id),
-          target_hospital:hospitals!referrals_target_hospital_id_fkey(name),
-          target_department:departments(name)
-        `)
+        .select('id, referral_id, status, urgency, reason, created_at, patient_id, target_hospital_id, target_department_id')
         .eq('referring_doctor_id', profile.id)
         .order('created_at', { ascending: false })
         .limit(10);
 
-      if (referralsError) {
-        console.error('Error fetching referrals:', referralsError);
+      if (refsErr) {
+        console.error('Error fetching referrals:', refsErr);
       } else {
-        setRecentReferrals(referralsData as Referral[]);
+        const patientIds = Array.from(new Set((baseRefs || []).map((r) => r.patient_id)));
+        const hospIds = Array.from(new Set((baseRefs || []).map((r) => r.target_hospital_id)));
+        const deptIds = Array.from(new Set((baseRefs || []).map((r) => r.target_department_id)));
+
+        const [patientsRes, hospitalsRes, deptsRes] = await Promise.all([
+          patientIds.length > 0
+            ? supabase.from('patients').select('id, full_name, patient_id').in('id', patientIds)
+            : Promise.resolve({ data: [], error: null } as any),
+          hospIds.length > 0
+            ? supabase.from('hospitals').select('id, name').in('id', hospIds)
+            : Promise.resolve({ data: [], error: null } as any),
+          deptIds.length > 0
+            ? supabase.from('departments').select('id, name').in('id', deptIds)
+            : Promise.resolve({ data: [], error: null } as any),
+        ]);
+
+        const patientsById = Object.fromEntries(((patientsRes as any).data || []).map((p: any) => [p.id, p]));
+        const hospitalsById = Object.fromEntries(((hospitalsRes as any).data || []).map((h: any) => [h.id, h]));
+        const deptsById = Object.fromEntries(((deptsRes as any).data || []).map((d: any) => [d.id, d]));
+
+        const mapped: Referral[] = (baseRefs || []).map((r: any) => ({
+          id: r.id,
+          referral_id: r.referral_id,
+          status: r.status,
+          urgency: r.urgency,
+          reason: r.reason,
+          created_at: r.created_at,
+          patient: {
+            full_name: patientsById[r.patient_id]?.full_name || 'Unknown',
+            patient_id: patientsById[r.patient_id]?.patient_id || 'N/A',
+          },
+          target_hospital: {
+            name: hospitalsById[r.target_hospital_id]?.name || 'Unknown',
+          },
+          target_department: {
+            name: deptsById[r.target_department_id]?.name || 'Unknown',
+          },
+        }));
+
+        setRecentReferrals(mapped);
       }
 
     } catch (error) {

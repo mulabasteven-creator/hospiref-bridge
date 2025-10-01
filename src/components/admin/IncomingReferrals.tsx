@@ -68,36 +68,81 @@ const IncomingReferrals = () => {
         return;
       }
 
-      const hospitalIds = assignedHospitals.map(h => h.hospital_id);
+      const hospitalIds = assignedHospitals.map((h) => h.hospital_id);
 
-      // Fetch referrals for all assigned hospitals
-      const { data, error } = await supabase
+      // Fetch referrals for all assigned hospitals (base fields only)
+      const { data: baseReferrals, error: referralsError } = await supabase
         .from('referrals')
-        .select(`
-          id,
-          referral_id,
-          status,
-          urgency,
-          reason,
-          notes,
-          created_at,
-          appointment_date,
-          patient:patients(full_name, patient_id, phone, email),
-          referring_doctor:profiles!referrals_referring_doctor_id_fkey(full_name, specialization),
-          origin_hospital:hospitals!referrals_origin_hospital_id_fkey(name, city, state),
-          target_department:departments(name)
-        `)
+        .select(
+          'id, referral_id, status, urgency, reason, notes, created_at, appointment_date, patient_id, referring_doctor_id, origin_hospital_id, target_department_id'
+        )
         .in('target_hospital_id', hospitalIds)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setReferrals(data as IncomingReferral[]);
+      if (referralsError) throw referralsError;
+
+      const patientIds = Array.from(new Set((baseReferrals || []).map((r) => r.patient_id)));
+      const doctorIds = Array.from(new Set((baseReferrals || []).map((r) => r.referring_doctor_id)));
+      const originHospitalIds = Array.from(new Set((baseReferrals || []).map((r) => r.origin_hospital_id)));
+      const departmentIds = Array.from(new Set((baseReferrals || []).map((r) => r.target_department_id)));
+
+      // Fetch related data in parallel
+      const [patientsRes, doctorsRes, hospitalsRes, departmentsRes] = await Promise.all([
+        patientIds.length > 0
+          ? supabase.from('patients').select('id, full_name, patient_id, phone, email').in('id', patientIds)
+          : Promise.resolve({ data: [], error: null } as any),
+        doctorIds.length > 0
+          ? supabase.from('profiles').select('id, full_name, specialization').in('id', doctorIds)
+          : Promise.resolve({ data: [], error: null } as any),
+        originHospitalIds.length > 0
+          ? supabase.from('hospitals').select('id, name, city, state').in('id', originHospitalIds)
+          : Promise.resolve({ data: [], error: null } as any),
+        departmentIds.length > 0
+          ? supabase.from('departments').select('id, name').in('id', departmentIds)
+          : Promise.resolve({ data: [], error: null } as any),
+      ]);
+
+      const patientsById = Object.fromEntries(((patientsRes as any).data || []).map((p: any) => [p.id, p]));
+      const doctorsById = Object.fromEntries(((doctorsRes as any).data || []).map((d: any) => [d.id, d]));
+      const hospitalsById = Object.fromEntries(((hospitalsRes as any).data || []).map((h: any) => [h.id, h]));
+      const departmentsById = Object.fromEntries(((departmentsRes as any).data || []).map((d: any) => [d.id, d]));
+
+      const enriched: IncomingReferral[] = (baseReferrals || []).map((r: any) => ({
+        id: r.id,
+        referral_id: r.referral_id,
+        status: r.status,
+        urgency: r.urgency,
+        reason: r.reason,
+        notes: r.notes,
+        created_at: r.created_at,
+        appointment_date: r.appointment_date,
+        patient: {
+          full_name: patientsById[r.patient_id]?.full_name || 'Unknown',
+          patient_id: patientsById[r.patient_id]?.patient_id || 'N/A',
+          phone: patientsById[r.patient_id]?.phone || null,
+          email: patientsById[r.patient_id]?.email || null,
+        },
+        referring_doctor: {
+          full_name: doctorsById[r.referring_doctor_id]?.full_name || 'Unknown',
+          specialization: doctorsById[r.referring_doctor_id]?.specialization || null,
+        },
+        origin_hospital: {
+          name: hospitalsById[r.origin_hospital_id]?.name || 'Unknown',
+          city: hospitalsById[r.origin_hospital_id]?.city || 'Unknown',
+          state: hospitalsById[r.origin_hospital_id]?.state || 'Unknown',
+        },
+        target_department: {
+          name: departmentsById[r.target_department_id]?.name || 'Unknown',
+        },
+      }));
+
+      setReferrals(enriched);
     } catch (error) {
       console.error('Error fetching incoming referrals:', error);
       toast({
-        title: "Error",
-        description: "Failed to fetch incoming referrals",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Failed to fetch incoming referrals',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
