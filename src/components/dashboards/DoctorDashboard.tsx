@@ -73,16 +73,25 @@ const DoctorDashboard = () => {
       // Fetch assigned hospitals
       const { data: hospitalsData } = await supabase
         .from('doctor_hospitals')
-        .select('hospital_id, hospitals!inner(name, city)')
+        .select('hospital_id')
         .eq('doctor_id', profile.id);
 
-      const hospitals = (hospitalsData || []).map(h => ({
-        name: h.hospitals.name,
-        city: h.hospitals.city
-      }));
-      setAssignedHospitals(hospitals);
-
       const hospitalIds = (hospitalsData || []).map(h => h.hospital_id);
+
+      // Fetch hospital details
+      let hospitals: Array<{ name: string; city: string }> = [];
+      if (hospitalIds.length > 0) {
+        const { data: hospitalDetails } = await supabase
+          .from('hospitals')
+          .select('id, name, city')
+          .in('id', hospitalIds);
+        
+        hospitals = (hospitalDetails || []).map(h => ({
+          name: h.name,
+          city: h.city
+        }));
+      }
+      setAssignedHospitals(hospitals);
 
       // Fetch stats
       const [
