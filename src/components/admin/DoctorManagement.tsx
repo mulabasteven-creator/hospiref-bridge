@@ -85,8 +85,7 @@ const DoctorManagement = () => {
         .from('doctor_hospitals')
         .select(`
           doctor_id,
-          hospital_id,
-          hospitals(name, city)
+          hospital_id
         `);
 
       if (hospitalError) {
@@ -100,8 +99,7 @@ const DoctorManagement = () => {
         .select(`
           doctor_id,
           department_id,
-          departments(name, hospital_id),
-          hospitals(name)
+          hospital_id
         `);
 
       if (departmentError) {
@@ -112,7 +110,7 @@ const DoctorManagement = () => {
       // Fetch all hospitals and departments for the assignment interface
       const [hospitalsResponse, departmentsResponse] = await Promise.all([
         supabase.from('hospitals').select('id, name, city').order('name'),
-        supabase.from('departments').select('id, name, hospital_id, hospitals(name)').order('name')
+        supabase.from('departments').select('id, name, hospital_id').order('name')
       ]);
 
       if (hospitalsResponse.error) {
@@ -125,31 +123,47 @@ const DoctorManagement = () => {
       }
 
       setHospitals(hospitalsResponse.data || []);
-      setDepartments((departmentsResponse.data || []).map(dept => ({
-        id: dept.id,
-        name: dept.name,
-        hospital_id: dept.hospital_id,
-        hospital_name: dept.hospitals?.name || 'Unknown Hospital'
-      })));
+      setDepartments((departmentsResponse.data || []).map((dept: any) => {
+        const h = (hospitalsResponse.data || []).find((x: any) => x.id === dept.hospital_id);
+        return {
+          id: dept.id,
+          name: dept.name,
+          hospital_id: dept.hospital_id,
+          hospital_name: h?.name || 'Unknown Hospital'
+        };
+      }));
 
       // Combine doctor data with assignments
-      const enrichedDoctors = (doctorsData || []).map(doctor => ({
-        ...doctor,
-        hospital_assignments: (hospitalAssignments || [])
-          .filter(ha => ha.doctor_id === doctor.id && ha.hospitals)
-          .map(ha => ({
-            hospital_id: ha.hospital_id,
-            hospital_name: ha.hospitals?.name || 'Unknown',
-            hospital_city: ha.hospitals?.city || 'Unknown'
-          })),
-        department_assignments: (departmentAssignments || [])
-          .filter(da => da.doctor_id === doctor.id && da.departments && da.hospitals)
-          .map(da => ({
-            department_id: da.department_id,
-            department_name: da.departments?.name || 'Unknown',
-            hospital_name: da.hospitals?.name || 'Unknown'
-          }))
-      }));
+      const enrichedDoctors = (doctorsData || []).map((doctor: any) => {
+        const docHospitals = (hospitalAssignments || [])
+          .filter((ha: any) => ha.doctor_id === doctor.id)
+          .map((ha: any) => {
+            const h = (hospitalsResponse.data || []).find((x: any) => x.id === ha.hospital_id);
+            return {
+              hospital_id: ha.hospital_id,
+              hospital_name: h?.name || 'Unknown',
+              hospital_city: h?.city || 'Unknown'
+            };
+          });
+
+        const docDepartments = (departmentAssignments || [])
+          .filter((da: any) => da.doctor_id === doctor.id)
+          .map((da: any) => {
+            const d = (departmentsResponse.data || []).find((x: any) => x.id === da.department_id);
+            const h = (hospitalsResponse.data || []).find((x: any) => x.id === (d?.hospital_id || da.hospital_id));
+            return {
+              department_id: da.department_id,
+              department_name: d?.name || 'Unknown',
+              hospital_name: h?.name || 'Unknown'
+            };
+          });
+
+        return {
+          ...doctor,
+          hospital_assignments: docHospitals,
+          department_assignments: docDepartments
+        };
+      });
 
       setDoctors(enrichedDoctors);
     } catch (error) {
